@@ -9,6 +9,7 @@
 
 constexpr int kDim = 512;
 constexpr int kBlockDim = 16;
+constexpr int kNumSteps = 300;
 
 __device__ double alpha(double rate) {
     rate = rate < 0.001 ? 0.001 : rate > 1.0 ? 1.0 : rate;
@@ -151,8 +152,8 @@ int main()
     dim3 block(kBlockDim, kBlockDim);  // 16x16 = 256 threads per block
     dim3 grid(kDim / kBlockDim, kDim / kBlockDim);  // 512/16 = 32, so 32x32 blocks
 
-    for (int i = 0; i < 256; i++) {
-        if (i & 0x01) {
+    for (int step = 0; step < kNumSteps; step++) {
+        if (step & 0x01) {
             diffuse_kernel << <grid, block >> > (output.devptr, input.devptr, kDim, kDim, 0.6);
         }
         else
