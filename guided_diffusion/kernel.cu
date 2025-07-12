@@ -389,7 +389,7 @@ int main()
 	cudaEventRecord(e0);
 	static_guided_diffusion_fast << < grid, block >> > (input.devptr, output.devptr);
 	cudaEventRecord(e1);
-	syncDevice();
+	cudaEventSynchronize(e1);
 	ms = 0.0f;
 	cudaEventElapsedTime(&ms, e0, e1);
 	printf("total time using shared access: %f ms\n", ms);
@@ -402,7 +402,7 @@ int main()
 	cudaEventRecord(e0);
 	static_guided_diffusion << < grid, block >> > (input.devptr, output.devptr);
 	cudaEventRecord(e1);
-	syncDevice();
+	cudaEventSynchronize(e1);
 	ms = 0.0f;
 	cudaEventElapsedTime(&ms, e0, e1);
 	printf("total time using global access: %f ms\n", ms);
@@ -437,7 +437,7 @@ int main()
 	cudaEventRecord(e0);
 	static_guided_diffusion_fast_indirect << < grid, block >> > (input.devptr, perm.devptr, output.devptr);
 	cudaEventRecord(e1);
-	syncDevice();
+	cudaEventSynchronize(e1);
 	ms = 0.0f;
 	cudaEventElapsedTime(&ms, e0, e1);
 	printf("total time using shared access (indirect): %f ms\n", ms);
@@ -447,7 +447,7 @@ int main()
 	cudaEventRecord(e0);
 	static_guided_diffusion_indirect << < grid, block >> > (input.devptr, perm.devptr, output.devptr);
 	cudaEventRecord(e1);
-	syncDevice();
+	cudaEventSynchronize(e1);
 	ms = 0.0f;
 	cudaEventElapsedTime(&ms, e0, e1);
 	printf("total time using global access (indirect): %f ms\n", ms);
