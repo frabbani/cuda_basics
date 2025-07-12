@@ -15,7 +15,7 @@
 
 #define CLAMP(x,a,b) {x = x < (a) ? (a) : x > (b) ? (b) : x; }
 
-__device__ double3 box_blur(int x, int y, const double3* input, bool invert) {
+__device__ double3 box_blur(int x, int y, const double3* input, double scale, double offset) {
 	double3 sum = { 0.0, 0.0, 0.0 };
 	double count = 0.0;
 	for (int i = -KERNEL_SIZE; i <= KERNEL_SIZE; i++) {
@@ -32,33 +32,33 @@ __device__ double3 box_blur(int x, int y, const double3* input, bool invert) {
 			count = count + 1.0;
 		}
 	}
-	sum.x = sum.x / count;
-	sum.y = sum.y / count;
-	sum.z = sum.z / count;
-	if (invert) {
-		sum.x = 1.0 - sum.x;
-		sum.y = 1.0 - sum.y;
-		sum.z = 1.0 - sum.z;
-	}
+	sum.x = scale * sum.x / count + offset;
+	sum.y = scale * sum.y / count + offset;
+	sum.z = scale * sum.z / count + offset;
 	return sum;
 }
 
-
+// don't do this
 __global__ void warp_test(const double3* input, double3* output) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
-	if ((threadIdx.x + threadIdx.y) & 0x01) {
-		output[y * IMAGE_DIM + x] = box_blur(x, y, input, true);
+	bool flip = (threadIdx.x + threadIdx.y) & 0x01;
+	if (flip) {
+		output[y * IMAGE_DIM + x] = box_blur(x, y, input, +1.0, 0.0);
 	}
 	else {
-		output[y * IMAGE_DIM + x] = box_blur(x, y, input, false);
+		output[y * IMAGE_DIM + x] = box_blur(x, y, input, -1.0, 1.0);
 	}
 }
 
+// do this instead
 __global__ void warp_test_nodiv(const double3* input, double3* output) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
-	output[y * IMAGE_DIM + x] = box_blur(x, y, input, ((threadIdx.x + threadIdx.y) & 0x01));
+	bool flip = (threadIdx.x + threadIdx.y) & 0x01;
+	double scale = flip ? -1.0 : +1.0;
+	double offset = flip ? +1.0 : 0.0;
+	output[y * IMAGE_DIM + x] = box_blur(x, y, input, scale, offset);
 }
 
 
